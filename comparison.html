@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <script src="config.js?v=20261012-1"></script>
+
+    <link rel="stylesheet" href="style.css?v=20261012-4">
+    <!-- Temporary local-development tracking
+    <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="a51aec87-c8d1-4551-b360-66f3b36bf006"
+        data-domains="localhost,127.0.0.1"
+    ></script>
+    -->
+
+    <!-- Production tracking -->
+    <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="a51aec87-c8d1-4551-b360-66f3b36bf006"
+        data-domains="ok-stand-2128.github.io"
+    ></script>
+</head>
+
+<body>
+
+<!-- Top Banner / Tabs -->
+<div class="top-banner">
+    <div class="tabs">
+        <a href="index.html" class="tab">
+            Subreddit Tracking
+        </a>
+
+        <a href="comparison.html" class="tab active">
+            Subreddit Comparison
+        </a>
+
+        <a href="summary.html" class="tab">
+            Summary
+        </a>
+
+        <a href="methodology.html" class="tab">
+            Methodology
+        </a>
+
+        <a href="https://ko-fi.com/okstand" class="kofi-support-link" target="_blank" rel="noopener noreferrer" aria-label="Support me on Ko-fi" data-umami-event="Ko-fi Support Click">
+            <img src="assets/support_me_on_kofi_beige.png" class="kofi-support-image" alt="Support me on Ko-fi">
+        </a>
+    </div>
+</div>
+
+<div class="dashboard">
+
+    <div class="daily-posts-comparison-wrapper">
+        <div class="dashboard-introduction">
+            <div class="metric-label">
+                Total Posts per Day (Last <span class="analysis-window-days"></span> Days)
+            </div>
+
+            <div>
+                Running daily totals of posts made in each subreddit.
+            </div>
+        </div>
+
+        <div id="daily-posts-comparison-card" class="metric-card daily-posts-comparison-card">
+            <div id="daily-posts-card-title" class="metric-label">
+                Total Posts per Day (Last <span class="analysis-window-days"></span> Days)
+            </div>
+
+            <div class="metric-content daily-posts-comparison-layout">
+                <div class="daily-posts-chart-wrapper">
+                    <div id="daily-posts-comparison-chart">
+                        Loading daily post totals...
+                    </div>
+                </div>
+
+                <aside class="daily-posts-controls" aria-labelledby="daily-posts-controls-title">
+                    <div id="daily-posts-controls-title" class="daily-posts-controls-title">
+                        Show Subreddits
+                    </div>
+
+                    <div id="daily-posts-checkboxes" class="daily-posts-checkboxes"></div>
+
+                    <label class="daily-posts-provisional-option">
+                        <input id="show-provisional-data" type="checkbox">
+                        <span>Show most recent provisional data</span>
+                    </label>
+                    <a class="daily-posts-provisional-help" href="methodology.html#provisional-data"><em>What's this?</em></a>
+                </aside>
+            </div>
+
+            <div class="daily-posts-date-controls" aria-label="Visible chart date range">
+                <label class="daily-posts-date-control" for="daily-posts-start-date">
+                    <span>Start date: <output id="daily-posts-start-date-label"></output></span>
+                    <input id="daily-posts-start-date" type="range" min="0" max="0" value="0" step="1">
+                </label>
+
+                <label class="daily-posts-date-control" for="daily-posts-end-date">
+                    <span>End date: <output id="daily-posts-end-date-label"></output></span>
+                    <input id="daily-posts-end-date" type="range" min="0" max="0" value="0" step="1">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-three-comparison-wrapper">
+        <div class="dashboard-introduction">
+            <div class="metric-label">
+                Top 3 Users (Last <span class="analysis-window-days"></span> Days) - Sorted
+            </div>
+
+            <div>
+                The charts below are sorted by the percentage of posts made by the top 3 users in the last <span class="analysis-window-days"></span> days.
+            </div>
+        </div>
+
+        <div id="top-three-comparison-grid" class="top-three-comparison-grid">
+            Loading top-three comparisons...
+        </div>
+    </div>
+
+    <div class="dashboard-introduction">
+        <div class="metric-label">
+            Percentage of Users Needed to Account for X% of Posts
+        </div>
+
+        <div>
+            The heat map shows the percentage of unique posters needed to account for specified percentages of the subreddit's posts in the last <span class="analysis-window-days"></span> days. Lower percentages indicate that posting activity is concentrated among a smaller number of users, while higher percentages indicate broader participation from unique accounts. Use Connect Rankings to trace a ranking across columns; because rankings are calculated separately for each column, a line may connect different subreddits. The 100% column is shown in gray because every included poster is required to account for all posts. To better understand this chart, ask yourself the question, &ldquo;What percentage of users in r/subreddit is needed to make up 30% (or 20%, 50%, etc.) of all posts in the last <span class="analysis-window-days"></span> days?&rdquo; The percentages in the heat map squares are the answer to that question.
+        </div>
+    </div>
+
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 8: Heat map of the percentage of users needed to account for various percentages of posts in the last <span class="analysis-window-days"></span> days.
+        </div>
+
+        <div id="poster-threshold-card" class="metric-card">
+            <div class="metric-label">
+                Percentage of Unique Posters Needed to Account for X% of Posts (Last <span class="analysis-window-days"></span> Days)
+            </div>
+
+            <div class="metric-content poster-threshold-layout">
+                <div class="poster-threshold-wrapper">
+                    <div id="poster-threshold-grid">
+                        Loading comparison...
+                    </div>
+                </div>
+
+                <aside class="poster-ranking-controls" aria-labelledby="connect-rankings-title">
+                    <div id="connect-rankings-title" class="poster-ranking-controls-title">
+                        Connect Rankings
+                    </div>
+
+                    <div id="poster-ranking-checkboxes" class="poster-ranking-checkboxes"></div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-introduction">
+        <div class="metric-label">
+            Top X Users
+        </div>
+
+        <div>
+            Finally, the figure below shows the subreddits sorted by the percentage of contributions made by the top X users.
+        </div>
+    </div>
+
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 9: Percentage of posts made by the top X posters in the last <span class="analysis-window-days"></span> days.
+        </div>
+
+        <div id="top-x-posters-card" class="metric-card">
+            <div class="metric-label">
+                Percentage of Posts Made by the Top X Posters in the Last <span class="analysis-window-days"></span> Days
+            </div>
+
+            <label class="top-x-selector" for="top-x-select">
+                Number of top posters:
+                <select id="top-x-select">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </label>
+
+            <div class="metric-content">
+                <div id="top10-share-comparison-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-introduction">
+        <div class="metric-label">
+            Active in More Than One Subreddit
+        </div>
+
+        <div>
+            The following users are among the smallest groups of users whose combined posts account for at least 10% or 25% of posts in more than one subreddit during the last <span class="analysis-window-days"></span> days.
+        </div>
+    </div>
+
+    <div class="metric-card cross-subreddit-overlap-card">
+        <div class="metric-label">
+            Found Among the Users Accounting for 10% or 25% of Posts in More Than One Subreddit
+        </div>
+
+        <div class="cross-subreddit-overlap-content">
+            <section class="cross-subreddit-overlap-section">
+                <div class="cross-subreddit-overlap-heading">
+                    Within the Group Accounting for at Least 10% of Posts in at Least Two Subreddits
+                </div>
+
+                <div id="cross-subreddit-10-list" class="cross-subreddit-overlap-list">
+                    Loading comparison...
+                </div>
+            </section>
+
+            <section class="cross-subreddit-overlap-section">
+                <div class="cross-subreddit-overlap-heading">
+                    Within the Group Accounting for at Least 25% of Posts in at Least Two Subreddits
+                </div>
+
+                <div id="cross-subreddit-25-list" class="cross-subreddit-overlap-list">
+                    Loading comparison...
+                </div>
+            </section>
+        </div>
+    </div>
+
+</div>
+
+<script src="share-links.js?v=20260927-3"></script>
+<script src="comparison.js?v=20261012-6"></script>
+
+</body>
+</html>

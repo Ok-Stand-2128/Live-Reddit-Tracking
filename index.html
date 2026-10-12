@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="style.css?v=20260927-2">
+    <!-- Temporary local-development tracking
+    <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="a51aec87-c8d1-4551-b360-66f3b36bf006"
+        data-domains="localhost,127.0.0.1"
+    ></script>
+     -->
+
+    <!-- Production tracking -->
+    <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="a51aec87-c8d1-4551-b360-66f3b36bf006"
+        data-domains="ok-stand-2128.github.io"
+    ></script>
+</head>
+<body>
+
+<!-- Top Banner / Tabs -->
+<div class="top-banner">
+    <div class="tabs">
+        <a href="index.html" class="tab active">Subreddit Tracking</a>
+        <a href="comparison.html" class="tab">Subreddit Comparison</a>
+        <a href="summary.html" class="tab">Summary</a>
+        <a href="methodology.html" class="tab">Methodology</a>
+        <a href="https://ko-fi.com/okstand" class="kofi-support-link" target="_blank" rel="noopener noreferrer" aria-label="Support me on Ko-fi" data-umami-event="Ko-fi Support Click">
+            <img src="assets/support_me_on_kofi_beige.png" class="kofi-support-image" alt="Support me on Ko-fi">
+        </a>
+    </div>
+
+    <div class="subreddit-selector">
+        <div id="subreddit-selector-label" class="subreddit-selector-label">
+            Select a subreddit (a random subreddit is selected by default when the page loads)
+        </div>
+
+        <div
+            id="subreddit-select"
+            class="subreddit-button-grid"
+            role="group"
+            aria-labelledby="subreddit-selector-label"
+        >
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_AnythingGoesNews.csv">r/AnythingGoesNews</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_antitrump.csv">r/antitrump</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_CanadaPolitics.csv">r/CanadaPolitics</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_Conservative.csv">r/Conservative</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_conspiracy.csv">r/conspiracy</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_democrats.csv">r/democrats</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_neoliberal.csv">r/neoliberal</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_politics.csv">r/politics</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_ProgressiveHQ.csv">r/ProgressiveHQ</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_socialism.csv">r/socialism</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_trump.csv">r/trump</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_ukpolitics.csv">r/ukpolitics</button>
+            <button type="button" class="subreddit-option" data-filename="auth_reddit_worldnews.csv">r/worldnews</button>
+        </div>
+    </div>
+</div>
+
+<h1 class="dashboard-title">Live Reddit Tracking and Analysis</h1>
+
+<p class="dashboard-introduction">
+    This site tracks and analyzes daily post activity across 13 subreddits. I began this analysis after wondering how comparable various political subreddits are in terms
+    of whether posting activity is concentrated among a relatively small number of users. This analysis focuses on posts only and does not account for comments. A five-day
+    reporting lag is applied to allow time for data collection and cleanup. All usernames have been pseudonymized. For more background and information, see the <a href="summary.html">Summary</a> and
+    <a href="methodology.html">Methodology</a> pages.
+</p>
+<p class="dashboard-introduction">
+    Select a subreddit name above to load its analysis.
+</p>
+
+<div class="dashboard">
+    <div class="dashboard-summary-row">
+        <!-- Number of posts in the configured analysis window -->
+        <div class="metric-card">
+            <div class="subreddit-card-label selected-subreddit-name"></div>
+
+            <div class="metric-label">
+                Posts in the Last <span class="analysis-window-days"></span> Days
+            </div>
+
+            <div class="metric-content">
+                <div id="total-posts" class="metric-value"></div>
+            </div>
+        </div>
+
+        <div class="dashboard-subreddit-heading selected-subreddit-name"></div>
+    </div>
+
+    <!-- Top ten users in the configured analysis window -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 1: The number of posts made by the top 10 users on <span class="selected-subreddit-name"></span>.
+        </div>
+
+        <div id="top-10-users-card" class="metric-card">
+            <div class="subreddit-card-label selected-subreddit-name"></div>
+
+            <div class="metric-label">
+                Top 10 Users (Last <span class="analysis-window-days"></span> Days)
+            </div>
+
+            <div class="metric-content">
+                <div id="top10-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 3 users in the configured analysis window -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 2: Percentage of posts made by the top 3 users on <span class="selected-subreddit-name"></span>.
+        </div>
+
+        <div id="top-3-users-card" class="metric-card comparison-pie-card">
+            <div id="selected-pie-subreddit" class="comparison-pie-subreddit selected-subreddit-name"></div>
+            <div id="selected-pie-rank" class="comparison-pie-rank"></div>
+
+            <div class="metric-label">
+                Top 3 Users (Last <span class="analysis-window-days"></span> Days)
+            </div>
+
+            <div id="selected-pie-total" class="comparison-pie-total"></div>
+
+            <div id="pie-chart" class="comparison-pie-chart"></div>
+        </div>
+    </div>
+
+    <!-- 7-day running average within the configured analysis window -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 3: Timeline of the 7-day average number of posts per day by the top 10 users for <span class="selected-subreddit-name"></span>.
+        </div>
+
+        <div id="running-average-card" class="metric-card">
+            <div class="subreddit-card-label selected-subreddit-name"></div>
+
+            <div class="metric-label">
+                7-Day Running Daily Post Average (Last <span class="analysis-window-days"></span> Days)
+            </div>
+
+            <div class="metric-content">
+                <div id="running-avg-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily post count with top 3 highlighted -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 4: Daily number of posts made by the top 3 users compared to all other users combined at <span class="selected-subreddit-name"></span>.
+        </div>
+
+        <div id="daily-post-count-card" class="metric-card">
+            <div class="subreddit-card-label selected-subreddit-name"></div>
+
+            <div class="metric-label">
+                Daily Post Count (Top 3 vs All Others)
+            </div>
+
+            <div class="metric-content">
+                <div id="stacked-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily percentages of post count with top 3 highlighted -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 5: Percentage of posts made by the top 3 users compared to all other users combined at <span class="selected-subreddit-name"></span>.
+        </div>
+
+        <div id="daily-percent-card" class="metric-card">
+            <div class="subreddit-card-label selected-subreddit-name"></div>
+
+            <div class="metric-label">
+                Daily Percent (Top 3 vs All Others)
+            </div>
+
+            <div class="metric-content">
+                <div id="stacked-percent-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="figure-explanation">
+        <strong>Clustered Posting</strong>
+        <p>
+            Clustered posting is defined here as three posts by a user within 20 minutes (at most). Posts are evaluated chronologically, assigning groups of 3 posts into bins and then continuing the search for additional clusters. This ensures that each post can only contribute to a single cluster. Clusters are categorized according to the time between the first and third posts. For example, a purple marker in the figure below at '10' indicates that the user had 10 distinct occurrences in which 3 consecutive posts were made within 5 minutes. This analysis includes all posts made by the top 10 users during the last <span class="analysis-window-days"></span> days. Clustered posting may be an indicator that a user is using scheduling software - for example, when a user queues several items (articles or posts) to be published automatically - but it does not necessarily establish that scheduling software was used.
+        </p>
+    </div>
+
+    <!-- Clustered posting analysis -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 6: Clustered posting analysis for the top ten users of <span class="selected-subreddit-name"></span>.
+        </div>
+
+        <div id="clustered-posting-card" class="metric-card">
+            <div class="subreddit-card-label selected-subreddit-name"></div>
+
+            <div class="metric-label">
+                Clustered Posting (Top 10 Users)
+            </div>
+
+            <div class="metric-content">
+                <div id="cluster-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="figure-explanation">
+        <strong>Example of Clustered Posting</strong>
+        <p>
+            The example posting timeline below shows how posts are categorized into their respective cluster bins. In this example, the user's posts would be categorized as two 0&ndash;5-minute clusters <span class="cluster-inline-marker cluster-bin-0-5" aria-hidden="true"></span>, one 5&ndash;10-minute cluster <span class="cluster-inline-marker cluster-bin-5-10" aria-hidden="true"></span>, one 10&ndash;15-minute cluster <span class="cluster-inline-marker cluster-bin-10-15" aria-hidden="true"></span>, zero 15&ndash;20-minute clusters <span class="cluster-inline-marker cluster-bin-15-20" aria-hidden="true"></span>, and two posts that do not fall within a cluster.
+        </p>
+    </div>
+
+    <!-- Clustered posting example -->
+    <div class="figure-block">
+        <div class="figure-caption">
+            Figure 7: Example of how clustered posting is determined.
+        </div>
+
+        <div class="metric-card cluster-example-card">
+            <svg
+                class="cluster-example-svg"
+                viewBox="0 0 1200 235"
+                role="img"
+                aria-labelledby="cluster-example-title cluster-example-description"
+            >
+                <title id="cluster-example-title">Example clustered-posting timeline</title>
+                <desc id="cluster-example-description">A timeline from zero to sixty minutes showing four non-overlapping three-post clusters and two posts that do not form a cluster.</desc>
+
+                <!-- Five-minute guide lines -->
+                <g class="cluster-example-guides">
+                    <line x1="40" y1="95" x2="40" y2="175"></line>
+                    <line x1="133.3" y1="95" x2="133.3" y2="175"></line>
+                    <line x1="226.7" y1="95" x2="226.7" y2="175"></line>
+                    <line x1="320" y1="95" x2="320" y2="175"></line>
+                    <line x1="413.3" y1="95" x2="413.3" y2="175"></line>
+                    <line x1="506.7" y1="95" x2="506.7" y2="175"></line>
+                    <line x1="600" y1="95" x2="600" y2="175"></line>
+                    <line x1="693.3" y1="95" x2="693.3" y2="175"></line>
+                    <line x1="786.7" y1="95" x2="786.7" y2="175"></line>
+                    <line x1="880" y1="95" x2="880" y2="175"></line>
+                    <line x1="973.3" y1="95" x2="973.3" y2="175"></line>
+                    <line x1="1066.7" y1="95" x2="1066.7" y2="175"></line>
+                    <line x1="1160" y1="95" x2="1160" y2="175"></line>
+                </g>
+
+                <!-- Axis and tick marks -->
+                <line class="cluster-example-axis" x1="40" y1="175" x2="1160" y2="175"></line>
+                <g class="cluster-example-ticks">
+                    <line x1="40" y1="175" x2="40" y2="181"></line>
+                    <line x1="133.3" y1="175" x2="133.3" y2="181"></line>
+                    <line x1="226.7" y1="175" x2="226.7" y2="181"></line>
+                    <line x1="320" y1="175" x2="320" y2="181"></line>
+                    <line x1="413.3" y1="175" x2="413.3" y2="181"></line>
+                    <line x1="506.7" y1="175" x2="506.7" y2="181"></line>
+                    <line x1="600" y1="175" x2="600" y2="181"></line>
+                    <line x1="693.3" y1="175" x2="693.3" y2="181"></line>
+                    <line x1="786.7" y1="175" x2="786.7" y2="181"></line>
+                    <line x1="880" y1="175" x2="880" y2="181"></line>
+                    <line x1="973.3" y1="175" x2="973.3" y2="181"></line>
+                    <line x1="1066.7" y1="175" x2="1066.7" y2="181"></line>
+                    <line x1="1160" y1="175" x2="1160" y2="181"></line>
+                </g>
+
+                <!-- Minute labels -->
+                <g class="cluster-example-minute-labels">
+                    <text x="40" y="199">0</text>
+                    <text x="133.3" y="199">5</text>
+                    <text x="226.7" y="199">10</text>
+                    <text x="320" y="199">15</text>
+                    <text x="413.3" y="199">20</text>
+                    <text x="506.7" y="199">25</text>
+                    <text x="600" y="199">30</text>
+                    <text x="693.3" y="199">35</text>
+                    <text x="786.7" y="199">40</text>
+                    <text x="880" y="199">45</text>
+                    <text x="973.3" y="199">50</text>
+                    <text x="1066.7" y="199">55</text>
+                    <text x="1160" y="199">60</text>
+                </g>
+                <text class="cluster-example-axis-title" x="600" y="226">Minutes</text>
+
+                <!-- Posts at minutes 7 and 58 do not form a cluster -->
+                <text class="cluster-example-noncluster-label" x="170.7" y="111">Not clustered</text>
+                <text class="cluster-example-noncluster-label" x="1122.7" y="111">Not clustered</text>
+
+                <!-- Curved brackets for the four cluster categories -->
+                <g fill="none" stroke-width="3" stroke-linecap="round">
+                    <path stroke="rgb(160,120,200)" d="M58.7 126 Q68 105 86.7 100"></path>
+                    <path stroke="rgb(160,120,200)" d="M114.7 126 Q105 105 86.7 100"></path>
+
+                    <path stroke="rgb(247,196,31)" d="M320 126 Q370 105 450.7 100"></path>
+                    <path stroke="rgb(247,196,31)" d="M581.3 126 Q530 105 450.7 100"></path>
+
+                    <path stroke="rgb(104,150,54)" d="M712 126 Q745 105 796 100"></path>
+                    <path stroke="rgb(104,150,54)" d="M880 126 Q847 105 796 100"></path>
+
+                    <path stroke="rgb(160,120,200)" d="M973.3 126 Q983 105 1001.3 100"></path>
+                    <path stroke="rgb(160,120,200)" d="M1029.3 126 Q1020 105 1001.3 100"></path>
+                </g>
+
+                <!-- Cluster category markers and labels -->
+                <g class="cluster-example-category-labels">
+                    <circle cx="86.7" cy="82" r="8" fill="rgb(160,120,200)"></circle>
+                    <text x="86.7" y="64">0-5 min</text>
+
+                    <circle cx="450.7" cy="82" r="8" fill="rgb(247,196,31)"></circle>
+                    <text x="450.7" y="64">10-15 min</text>
+
+                    <circle cx="796" cy="82" r="8" fill="rgb(104,150,54)"></circle>
+                    <text x="796" y="64">5-10 min</text>
+
+                    <circle cx="1001.3" cy="82" r="8" fill="rgb(160,120,200)"></circle>
+                    <text x="1001.3" y="64">0-5 min</text>
+                </g>
+
+                <!-- Example post markers: minutes 1, 3, 4, 7, 15, 28, 29, 36, 39, 45, 50, 51, 53, and 58 -->
+                <g class="cluster-example-posts">
+                    <circle cx="58.7" cy="135" r="8"></circle>
+                    <circle cx="96" cy="135" r="8"></circle>
+                    <circle cx="114.7" cy="135" r="8"></circle>
+                    <circle cx="170.7" cy="135" r="8"></circle>
+                    <circle cx="320" cy="135" r="8"></circle>
+                    <circle cx="562.7" cy="135" r="8"></circle>
+                    <circle cx="581.3" cy="135" r="8"></circle>
+                    <circle cx="712" cy="135" r="8"></circle>
+                    <circle cx="768" cy="135" r="8"></circle>
+                    <circle cx="880" cy="135" r="8"></circle>
+                    <circle cx="973.3" cy="135" r="8"></circle>
+                    <circle cx="992" cy="135" r="8"></circle>
+                    <circle cx="1029.3" cy="135" r="8"></circle>
+                    <circle cx="1122.7" cy="135" r="8"></circle>
+                </g>
+
+                <g class="cluster-example-post-legend">
+                    <circle cx="48" cy="220" r="8"></circle>
+                    <text x="64" y="224">User post</text>
+                </g>
+            </svg>
+        </div>
+    </div>
+
+</div>
+
+<script src="share-links.js?v=20260927-3"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

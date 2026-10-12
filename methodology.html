@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <!-- Temporary local-development tracking -->
+    <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="a51aec87-c8d1-4551-b360-66f3b36bf006"
+        data-domains="localhost,127.0.0.1"
+    ></script>
+
+    <!-- Production tracking
+    <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="a51aec87-c8d1-4551-b360-66f3b36bf006"
+        data-domains="ok-stand-2128.github.io"
+    ></script>
+    -->
+</head>
+<body>
+
+<!-- Top Tabs -->
+<div class="top-banner">
+    <div class="tabs">
+        <a href="index.html" class="tab">Subreddit Tracking</a>
+        <a href="comparison.html" class="tab">Subreddit Comparison</a>
+        <a href="summary.html" class="tab">Summary</a>
+        <a href="methodology.html" class="tab active">Methodology</a>
+        <a href="https://ko-fi.com/okstand" class="kofi-support-link" target="_blank" rel="noopener noreferrer" aria-label="Support me on Ko-fi" data-umami-event="Ko-fi Support Click">
+            <img src="assets/support_me_on_kofi_beige.png" class="kofi-support-image" alt="Support me on Ko-fi">
+        </a>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="dashboard">
+    <div class="metric-card">
+        <div class="metric-label">Summary of Data Collection Approach</div>
+
+        <div class="metric-content methodology-text">
+            <div class="summary-text">
+                <p>
+                    This project tracks posting activity across various political- and news-oriented subreddits using daily snapshots.
+                </p>
+
+                <p>
+                    The goal is not to recreate Reddit’s full historical dataset, but instead to capture publicly visible posts on a day-to-day basis. Each day, a script 
+                    collects the currently visible posts and adds them to a growing dataset. Posts made within three hours of the data collection are temporarily excluded 
+                    to provide a moderation window. Those posts may be collected during subsequent collections.
+                </p>
+
+                <p>
+                    The dashboard focuses on a few key questions:
+                </p>
+
+                <ul class="methodology-questions">
+                    <li>What percentage of users is needed to account for X% of posts?</li>
+                    <li>How do these subreddits compare against each other?</li>
+                    <li>Are there patterns in how frequently users post?</li>
+                </ul>
+
+                <p>
+                    The following list provides a summary of how the data is collected. A link to the script and the full datasets (pseudonymized) are provided below the list.
+                </p>
+            </div>
+
+            <ol class="methodology-list">
+                <li>
+                    An initial historical sample was collected for each subreddit to establish a starting dataset. The collection uses Reddit's JSON-formatted "new posts" listing and pagination to retrieve approximately the 1,000 most recent posts available for each subreddit at the time of collection.
+                </li>
+                <li>
+                    The datasets are updated daily so newly submitted posts can be incorporated over time and the available historical coverage can gradually expand.
+                </li>
+                <li>
+                    Posts published within the three hours immediately preceding collection are temporarily excluded, giving moderators time to remove spam, rule-breaking material, or other unwanted submissions.
+                </li>
+                <li>
+                    Each daily collection intentionally overlaps existing data to reduce the possibility of missing posts when subreddit activity changes during the collection process.
+                </li>
+                <li>
+                    Reddit post IDs are used as unique identifiers, allowing overlapping collections to be merged without creating duplicate records.
+                </li>
+                <li id="provisional-data">
+                    Viewable data has a lag of 5 days to allow the daily script and myself to identify and account for possible data collection errors. Data within that five-day period is considered <em>provisional data</em>.
+                </li>
+            </ol>
+
+            <p class="script-link">
+                Full pseudonymized data:
+                <a
+                    href="https://github.com/Ok-Stand-2128/Live-Reddit-Tracking/tree/main/data"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >Browse the CSV files on GitHub</a>
+            </p>
+            <hr width="80%">
+            <section class="arctic-shift-comparison">
+                <h2>Comparison to Arctic Shift</h2>
+
+                <p>
+                    Arctic Shift and this tracker use different collection windows. Arctic Shift archives a post when it is initially published, then retrieves it again after approximately 36 hours to update selected fields and record changes such as deletion or editing. This tracker temporarily excludes posts published within the three hours preceding each daily collection. Once an eligible post is collected, it is retained in the dataset, and the dashboard displays the data after a five-day lag.
+                </p>
+
+                <p>
+                    In the theoretical example below, each color represents the same post at the same horizontal position on both timelines. Arctic Shift moves forward with publication, capturing posts as they appear and retrieving them again approximately 36 hours later. My tracker begins at the daily collection time and looks backward through the available posts. Posts published during the preceding three hours are temporarily excluded from that collection, while older posts are collected and retained. Temporarily excluded posts may be collected during a later daily run if they remain available on Reddit.
+                </p>
+
+                <div class="comparison-timeline-card">
+                    <svg
+                        class="comparison-timeline-svg"
+                        viewBox="0 0 900 440"
+                        role="img"
+                        aria-labelledby="comparison-timeline-title comparison-timeline-description"
+                    >
+                        <title id="comparison-timeline-title">Theoretical comparison of Arctic Shift and Live Reddit Tracker collection timing</title>
+                        <desc id="comparison-timeline-description">A two-lane timeline showing seven color-coded theoretical posts in matching horizontal positions. The Arctic Shift timeline points forward, capturing all seven posts near publication and retrieving them again approximately 36 hours later. My tracker timeline begins at the daily collection time on the right and points backward. It temporarily excludes the four most recent posts inside its three-hour moderation window and collects the three older posts. A separate forward sequence shows that collected posts are retained and become viewable after five days.</desc>
+
+                        <defs>
+                            <marker id="comparison-timeline-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+                                <path class="comparison-timeline-arrowhead" d="M0,0 L8,4 L0,8 Z"></path>
+                            </marker>
+                        </defs>
+
+                        <text class="comparison-timeline-heading" x="450" y="30">Theoretical Post-Capture Timeline</text>
+                        <text class="comparison-timeline-subheading" x="450" y="51">Matching colors and positions represent the same theoretical posts</text>
+
+                        <!-- Lane labels -->
+                        <g class="comparison-timeline-lane-labels">
+                            <text x="20" y="141">Arctic Shift</text>
+                            <text x="20" y="256">
+                                <tspan x="20">Live Reddit</tspan>
+                                <tspan x="20" dy="17">Tracker</tspan>
+                            </text>
+                        </g>
+
+                        <!-- Arctic Shift moves forward from publication -->
+                        <g class="comparison-timeline-direction-labels">
+                            <text x="185" y="96">Earlier publication</text>
+                            <text x="820" y="96">Later publication</text>
+                        </g>
+                        <line class="comparison-timeline-axis comparison-timeline-forward" x1="185" y1="135" x2="820" y2="135" marker-end="url(#comparison-timeline-arrow)"></line>
+                        <g class="comparison-timeline-posts" aria-label="Seven example posts captured by Arctic Shift">
+                            <circle class="comparison-post-1" cx="220" cy="135" r="7"></circle>
+                            <circle class="comparison-post-2" cx="255" cy="135" r="7"></circle>
+                            <circle class="comparison-post-3" cx="315" cy="135" r="7"></circle>
+                            <circle class="comparison-post-4" cx="420" cy="135" r="7"></circle>
+                            <circle class="comparison-post-5" cx="470" cy="135" r="7"></circle>
+                            <circle class="comparison-post-6" cx="520" cy="135" r="7"></circle>
+                            <circle class="comparison-post-7" cx="570" cy="135" r="7"></circle>
+                        </g>
+                        <circle class="comparison-timeline-recheck" cx="735" cy="135" r="9"></circle>
+                        <text class="comparison-timeline-callout" x="420" y="165">All example posts captured</text>
+                        <text class="comparison-timeline-callout" x="735" y="165">
+                            <tspan x="735">~36-hour</tspan>
+                            <tspan x="735" dy="15">update</tspan>
+                        </text>
+
+                        <!-- Live tracker starts at now and looks backward -->
+                        <g class="comparison-timeline-guides">
+                            <line x1="365" y1="203" x2="365" y2="302"></line>
+                            <line x1="620" y1="203" x2="620" y2="302"></line>
+                        </g>
+                        <g class="comparison-timeline-event-labels">
+                            <text x="365" y="198">
+                                <tspan x="365">3-hour cutoff</tspan>
+                                <tspan x="365" dy="15">older posts eligible</tspan>
+                            </text>
+                            <text x="620" y="198">
+                                <tspan x="620">Daily collection</tspan>
+                                <tspan x="620" dy="15">script runs (now)</tspan>
+                            </text>
+                        </g>
+                        <line class="comparison-timeline-axis comparison-timeline-backward" x1="620" y1="250" x2="185" y2="250" marker-end="url(#comparison-timeline-arrow)"></line>
+
+                        <!-- Same seven posts, aligned vertically with the Arctic Shift lane -->
+                        <g class="comparison-timeline-posts" aria-label="The same seven example posts evaluated by the Live Reddit Tracker">
+                            <circle class="comparison-timeline-collection-ring" cx="220" cy="250" r="11"></circle>
+                            <circle class="comparison-post-1" cx="220" cy="250" r="7"></circle>
+                            <circle class="comparison-timeline-collection-ring" cx="255" cy="250" r="11"></circle>
+                            <circle class="comparison-post-2" cx="255" cy="250" r="7"></circle>
+                            <circle class="comparison-timeline-collection-ring" cx="315" cy="250" r="11"></circle>
+                            <circle class="comparison-post-3" cx="315" cy="250" r="7"></circle>
+
+                            <circle class="comparison-post-4" cx="420" cy="250" r="7"></circle>
+                            <circle class="comparison-post-5" cx="470" cy="250" r="7"></circle>
+                            <circle class="comparison-post-6" cx="520" cy="250" r="7"></circle>
+                            <circle class="comparison-post-7" cx="570" cy="250" r="7"></circle>
+                        </g>
+
+                        <!-- Red X overlays indicate temporary exclusion from this daily collection -->
+                        <g class="comparison-timeline-excluded-posts">
+                            <path d="M413 243 L427 257 M427 243 L413 257"></path>
+                            <path d="M463 243 L477 257 M477 243 L463 257"></path>
+                            <path d="M513 243 L527 257 M527 243 L513 257"></path>
+                            <path d="M563 243 L577 257 M577 243 L563 257"></path>
+                        </g>
+
+                        <text class="comparison-timeline-callout" x="260" y="282">
+                            <tspan x="260">Older posts collected</tspan>
+                            <tspan x="260" dy="15">and retained</tspan>
+                        </text>
+                        <text class="comparison-timeline-callout" x="495" y="282">
+                            <tspan x="495">Most recent 3 hours temporarily</tspan>
+                            <tspan x="495" dy="15">excluded from this collection</tspan>
+                        </text>
+
+                        <!-- Display occurs later and is separate from the backward collection scan -->
+                        <g class="comparison-timeline-display-flow">
+                            <text class="comparison-timeline-flow-label" x="115" y="345">After collection:</text>
+                            <circle cx="245" cy="340" r="9"></circle>
+                            <text x="245" y="366">Collected posts</text>
+                            <line x1="265" y1="340" x2="448" y2="340" marker-end="url(#comparison-timeline-arrow)"></line>
+                            <circle cx="475" cy="340" r="9"></circle>
+                            <text x="475" y="366">Retained in dataset</text>
+                            <line x1="495" y1="340" x2="688" y2="340" marker-end="url(#comparison-timeline-arrow)"></line>
+                            <g class="comparison-timeline-visible-marker">
+                                <circle cx="715" cy="340" r="10"></circle>
+                                <path d="M710 340 L714 344 L721 336"></path>
+                            </g>
+                            <text x="715" y="366">Viewable after 5 days</text>
+                        </g>
+
+                        <!-- Legend -->
+                        <g class="comparison-timeline-legend">
+                            <g class="comparison-timeline-legend-posts" aria-hidden="true">
+                                <circle class="comparison-post-1" cx="164" cy="415" r="6"></circle>
+                                <circle class="comparison-post-2" cx="172" cy="415" r="6"></circle>
+                                <circle class="comparison-post-3" cx="180" cy="415" r="6"></circle>
+                                <circle class="comparison-post-4" cx="188" cy="415" r="6"></circle>
+                                <circle class="comparison-post-5" cx="196" cy="415" r="6"></circle>
+                                <circle class="comparison-post-6" cx="204" cy="415" r="6"></circle>
+                                <circle class="comparison-post-7" cx="212" cy="415" r="6"></circle>
+                            </g>
+                            <text x="225" y="419">Same posts on both timelines</text>
+                            <g class="comparison-timeline-excluded-posts">
+                                <path d="M394 409 L406 421 M406 409 L394 421"></path>
+                            </g>
+                            <text x="414" y="419">Excluded from this collection</text>
+                            <circle class="comparison-timeline-collection-ring" cx="610" cy="415" r="9"></circle>
+                            <circle class="comparison-post-4" cx="610" cy="415" r="5"></circle>
+                            <text x="625" y="419">Collected by tracker</text>
+                            <text class="comparison-timeline-scale-note" x="875" y="419">Timeline not to scale</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <p class="comparison-source-note">
+                    Arctic Shift process: <a href="https://github.com/ArthurHeitmann/arctic_shift/blob/master/file_content_explanations.md" target="_blank" rel="noopener noreferrer">collection documentation</a>.
+                </p>
+            </section>
+            <hr width="80%">
+            <section class="data-collection-notes">
+                <h2>Data Collection Notes</h2>
+
+                <p>
+                    The following collection interruptions or recovery operations may affect interpretation of the dataset. Posts still visible when collection resumes can 
+                    generally be backfilled, but posts removed during the interruption may not be recoverable. An empirical comparison of routine daily collection with Arctic 
+                    Shift across all 13 subreddits found that post counts differed by approximately 15% on average. Counts for periods backfilled using Arctic Shift should 
+                    therefore be treated as estimates.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Affected subreddits</th>
+                            <th scope="col">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>9/15/26–9/19/26</td>
+                            <td>All tracked subreddits</td>
+                            <td>Collection interrupted. Available posts were backfilled, but some removed posts may be absent.</td>
+                        </tr>
+                        <tr>
+                            <td>9/14/26–9/15/26</td>
+                            <td>r/politics</td>
+                            <td>Backfilled posts using Arctic Shift data.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

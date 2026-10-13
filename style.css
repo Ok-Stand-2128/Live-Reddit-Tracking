@@ -75,6 +75,15 @@ body {
     opacity: 0.88;
 }
 
+.beta-label {
+    align-self: center;
+    margin-left: 52px;
+    color: #9ca3af;
+    font-size: 1.7rem;
+    font-style: italic;
+    letter-spacing: 0.04em;
+}
+
 .summary-kofi-link {
     display: inline-flex;
     margin-left: 6px;

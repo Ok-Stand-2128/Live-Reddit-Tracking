@@ -4,7 +4,7 @@
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="config.js"></script>
-    <link rel="stylesheet" href="style.css?v=20261013-1">
+    <link rel="stylesheet" href="style.css?v=20261014-4">
     <!-- Temporary local-development tracking
     <script
         defer
@@ -93,12 +93,67 @@
         </div>
 
         <div class="dashboard-subreddit-heading selected-subreddit-name"></div>
+
     </div>
 
     <!-- Top ten users in the configured analysis window -->
     <div class="figure-block">
-        <div class="figure-caption">
-            Figure 1: The number of posts made by the top 10 users on <span class="selected-subreddit-name"></span>.
+        <div class="figure-caption-row">
+            <div class="figure-caption">
+                Figure 1: The number of posts made by the top 10 users on <span class="selected-subreddit-name"></span>.
+            </div>
+
+            <div class="analysis-timezone-control">
+                <label for="analysis-timezone">Select timezone for analysis:</label>
+                <select id="analysis-timezone" name="analysis-timezone">
+                    <option value="UTC" selected>UTC (default)</option>
+                    <optgroup label="North America">
+                        <option value="America/St_Johns">Newfoundland Time</option>
+                        <option value="America/Halifax">Atlantic Time</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Phoenix">Arizona Time</option>
+                        <option value="America/Los_Angeles">Pacific Time</option>
+                        <option value="America/Anchorage">Alaska Time</option>
+                        <option value="Pacific/Honolulu">Hawaii Time</option>
+                    </optgroup>
+                    <optgroup label="Central and South America">
+                        <option value="America/Mexico_City">Mexico City</option>
+                        <option value="America/Bogota">Bogot&aacute;</option>
+                        <option value="America/Lima">Lima</option>
+                        <option value="America/Santiago">Santiago</option>
+                        <option value="America/Sao_Paulo">S&atilde;o Paulo</option>
+                        <option value="America/Argentina/Buenos_Aires">Buenos Aires</option>
+                    </optgroup>
+                    <optgroup label="Europe and Africa">
+                        <option value="Atlantic/Reykjavik">Reykjav&iacute;k</option>
+                        <option value="Europe/London">London</option>
+                        <option value="Europe/Paris">Central European Time</option>
+                        <option value="Europe/Athens">Eastern European Time</option>
+                        <option value="Europe/Moscow">Moscow</option>
+                        <option value="Africa/Cairo">Cairo</option>
+                        <option value="Africa/Johannesburg">Johannesburg</option>
+                    </optgroup>
+                    <optgroup label="Asia">
+                        <option value="Asia/Dubai">Dubai</option>
+                        <option value="Asia/Karachi">Karachi</option>
+                        <option value="Asia/Kolkata">India Standard Time</option>
+                        <option value="Asia/Dhaka">Dhaka</option>
+                        <option value="Asia/Bangkok">Bangkok</option>
+                        <option value="Asia/Singapore">Singapore</option>
+                        <option value="Asia/Shanghai">China Standard Time</option>
+                        <option value="Asia/Tokyo">Tokyo</option>
+                        <option value="Asia/Seoul">Seoul</option>
+                    </optgroup>
+                    <optgroup label="Australia and Pacific">
+                        <option value="Australia/Perth">Perth</option>
+                        <option value="Australia/Adelaide">Adelaide</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                        <option value="Pacific/Auckland">Auckland</option>
+                    </optgroup>
+                </select>
+            </div>
         </div>
 
         <div id="top-10-users-card" class="metric-card">
@@ -356,7 +411,7 @@
 </div>
 
 <script src="share-links.js?v=20260927-3"></script>
-<script src="script.js"></script>
+<script src="script.js?v=20261014-11"></script>
 
 </body>
 </html>

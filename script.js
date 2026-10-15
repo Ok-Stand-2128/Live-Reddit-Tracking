@@ -6,6 +6,81 @@ const COLORS = {
   OTHERS: "rgb(200,180,218)"   // purple
 };
 
+const WEEKEND_HIGHLIGHT_COLOR = "rgba(247, 170, 70, 0.25)";
+const WEEKEND_DIVIDER_COLOR = "rgb(250, 250, 250)";
+
+function buildWeekendBackgroundShapes(dateKeys) {
+  if (!Array.isArray(dateKeys) || dateKeys.length === 0) {
+    return [];
+  }
+
+  const firstDate = new Date(`${dateKeys[0]}T00:00:00Z`);
+  const lastDate = new Date(
+    `${dateKeys[dateKeys.length - 1]}T00:00:00Z`
+  );
+  const firstSaturday = new Date(firstDate);
+  const daysUntilSaturday =
+    (6 - firstSaturday.getUTCDay() + 7) % 7;
+  const dataEndExclusive = new Date(
+    lastDate.getTime() + 24 * 60 * 60 * 1000
+  );
+
+  firstSaturday.setUTCDate(
+    firstSaturday.getUTCDate() + daysUntilSaturday
+  );
+
+  const shapes = [];
+
+  for (
+    let saturday = firstSaturday;
+    saturday < dataEndExclusive;
+    saturday = new Date(
+      saturday.getTime() + 7 * 24 * 60 * 60 * 1000
+    )
+  ) {
+    const monday = new Date(
+      saturday.getTime() + 2 * 24 * 60 * 60 * 1000
+    );
+    const sunday = new Date(
+      saturday.getTime() + 24 * 60 * 60 * 1000
+    );
+
+    if (monday > dataEndExclusive) {
+      break;
+    }
+
+    shapes.push({
+      type: "rect",
+      xref: "x",
+      yref: "paper",
+      x0: saturday.toISOString(),
+      x1: monday.toISOString(),
+      y0: 0,
+      y1: 1,
+      fillcolor: WEEKEND_HIGHLIGHT_COLOR,
+      line: { width: 0 },
+      layer: "below"
+    });
+
+    shapes.push({
+      type: "line",
+      xref: "x",
+      yref: "paper",
+      x0: sunday.toISOString(),
+      x1: sunday.toISOString(),
+      y0: 0,
+      y1: 1,
+      line: {
+        color: WEEKEND_DIVIDER_COLOR,
+        width: 1
+      },
+      layer: "below"
+    });
+  }
+
+  return shapes;
+}
+
 function parseCSV(csv) {
   return Papa.parse(csv, {
     header: true,
@@ -13,55 +88,220 @@ function parseCSV(csv) {
   }).data;
 }
 
-function getTimeWindowUTC() {
-  const now = new Date();
+let selectedTimeZone = "UTC";
+const dateFormatterCache = new Map();
+const dateTimeFormatterCache = new Map();
 
-  // Start of today's UTC calendar date.
-  const todayUTC = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate()
-    )
-  );
-
-  // Select the latest complete UTC date that may be reported.
-  const reportingDate = new Date(todayUTC);
-  reportingDate.setUTCDate(
-    reportingDate.getUTCDate() -
-    REPORTING_LAG_DAYS
-  );
-
-  // Include that entire UTC date in the reporting window.
-  const end = new Date(reportingDate);
-  end.setUTCDate(end.getUTCDate() + 1);
-  end.setUTCMilliseconds(-1);
-
-  // Include exactly the configured number of UTC calendar dates.
-  const start = new Date(reportingDate);
-  start.setUTCDate(
-    start.getUTCDate() -
-    DASHBOARD_CONFIG.analysisWindowDays +
-    1
-  );
-
-  return { start, end };
+function getSelectedTimeZone() {
+  return selectedTimeZone;
 }
 
-function convertUTCtoEST(utcString) {
-  if (!utcString) return null;
-
-  const utcDate = new Date(utcString);
-
-  if (isNaN(utcDate)) return null;
-
-  return new Date(
-    utcDate.toLocaleString("en-US", { timeZone: "America/New_York" })
+function formatUtcOffset(timeZone, date = new Date()) {
+  const parts = partsByType(
+    getDateTimeFormatter(timeZone).formatToParts(date)
   );
+  const representedUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  const instantToSecond =
+    Math.floor(date.getTime() / 1000) * 1000;
+  const offsetMinutes = Math.round(
+    (representedUtc - instantToSecond) / 60000
+  );
+  const sign = offsetMinutes >= 0 ? "+" : "−";
+  const absoluteMinutes = Math.abs(offsetMinutes);
+  const hours = String(
+    Math.floor(absoluteMinutes / 60)
+  ).padStart(2, "0");
+  const minutes = String(
+    absoluteMinutes % 60
+  ).padStart(2, "0");
+
+  return `UTC${sign}${hours}:${minutes}`;
+}
+
+function updateAnalysisTimeZoneLabels(selectElement) {
+  const now = new Date();
+
+  Array.from(selectElement.options).forEach(option => {
+    const baseLabel = option.textContent.trim();
+    const offset = formatUtcOffset(
+      option.value,
+      now
+    );
+
+    option.textContent = `${baseLabel} (${offset})`;
+  });
+}
+
+function getDateFormatter(timeZone) {
+  if (!dateFormatterCache.has(timeZone)) {
+    dateFormatterCache.set(
+      timeZone,
+      new Intl.DateTimeFormat(
+        "en-US-u-ca-gregory-nu-latn",
+        {
+          timeZone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }
+      )
+    );
+  }
+
+  return dateFormatterCache.get(timeZone);
+}
+
+function getDateTimeFormatter(timeZone) {
+  if (!dateTimeFormatterCache.has(timeZone)) {
+    dateTimeFormatterCache.set(
+      timeZone,
+      new Intl.DateTimeFormat(
+        "en-US-u-ca-gregory-nu-latn",
+        {
+          timeZone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hourCycle: "h23"
+        }
+      )
+    );
+  }
+
+  return dateTimeFormatterCache.get(timeZone);
+}
+
+function partsByType(parts) {
+  return Object.fromEntries(
+    parts
+      .filter(part => part.type !== "literal")
+      .map(part => [part.type, part.value])
+  );
+}
+
+function formatDateKeyInTimeZone(
+  date,
+  timeZone = getSelectedTimeZone()
+) {
+  const parts = partsByType(
+    getDateFormatter(timeZone).formatToParts(date)
+  );
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function shiftDateKey(dateKey, days) {
+  const [year, month, day] = dateKey
+    .split("-")
+    .map(Number);
+  const shifted = new Date(
+    Date.UTC(year, month - 1, day + days)
+  );
+
+  return shifted.toISOString().slice(0, 10);
+}
+
+function zonedMidnightToUtc(dateKey, timeZone) {
+  const [year, month, day] = dateKey
+    .split("-")
+    .map(Number);
+  const targetWallClock = Date.UTC(
+    year,
+    month - 1,
+    day,
+    0,
+    0,
+    0
+  );
+  let candidate = targetWallClock;
+
+  // Iteratively solve for the UTC instant that formats as local midnight.
+  // Rechecking the offset handles daylight-saving changes at the boundary.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const parts = partsByType(
+      getDateTimeFormatter(timeZone).formatToParts(
+        new Date(candidate)
+      )
+    );
+    const representedWallClock = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second)
+    );
+    const adjustment =
+      targetWallClock - representedWallClock;
+
+    candidate += adjustment;
+
+    if (adjustment === 0) {
+      break;
+    }
+  }
+
+  return new Date(candidate);
+}
+
+function createDateKeyRange(startDateKey, numberOfDays) {
+  return Array.from(
+    { length: numberOfDays },
+    (_, index) => shiftDateKey(startDateKey, index)
+  );
+}
+
+function getAnalysisTimeWindow() {
+  const timeZone = getSelectedTimeZone();
+  const todayDateKey = formatDateKeyInTimeZone(
+    new Date(),
+    timeZone
+  );
+  const reportingDateKey = shiftDateKey(
+    todayDateKey,
+    -REPORTING_LAG_DAYS
+  );
+  const startDateKey = shiftDateKey(
+    reportingDateKey,
+    -DASHBOARD_CONFIG.analysisWindowDays + 1
+  );
+  const endExclusiveDateKey = shiftDateKey(
+    reportingDateKey,
+    1
+  );
+  const start = zonedMidnightToUtc(
+    startDateKey,
+    timeZone
+  );
+  const endExclusive = zonedMidnightToUtc(
+    endExclusiveDateKey,
+    timeZone
+  );
+
+  return {
+    start,
+    end: new Date(endExclusive.getTime() - 1),
+    startDateKey,
+    endDateKey: reportingDateKey,
+    dateKeys: createDateKeyRange(
+      startDateKey,
+      DASHBOARD_CONFIG.analysisWindowDays
+    )
+  };
 }
 
 function countPostsInAnalysisWindow(data) {
-  const { start, end } = getTimeWindowUTC();
+  const { start, end } = getAnalysisTimeWindow();
 
   let count = 0;
 
@@ -82,6 +322,10 @@ function countPostsInAnalysisWindow(data) {
 
 const subredditSelect =
   document.getElementById("subreddit-select");
+const analysisTimeZoneSelect =
+  document.getElementById("analysis-timezone");
+
+updateAnalysisTimeZoneLabels(analysisTimeZoneSelect);
 
 const subredditButtons = Array.from(
   subredditSelect.querySelectorAll(
@@ -154,7 +398,8 @@ function initializeTrackingSharing() {
         cardId: card.cardId,
         cardTitle: card.title,
         getState: () => ({
-          subreddit: getSelectedSubredditName()
+          subreddit: getSelectedSubredditName(),
+          timezone: getSelectedTimeZone()
         })
       }
     );
@@ -247,10 +492,14 @@ function updateSelectedTopThreeRank(
     );
 
   rankElement.textContent = "";
+  const requestedTimeZone = getSelectedTimeZone();
 
   getTopThreeRankings()
     .then(rankings => {
-      if (csvFilename !== currentCsvFilename) {
+      if (
+        csvFilename !== currentCsvFilename ||
+        requestedTimeZone !== getSelectedTimeZone()
+      ) {
         return;
       }
 
@@ -273,9 +522,17 @@ function updateSelectedTopThreeRank(
 
 function loadDashboard(csvFilename) {
   currentCsvFilename = csvFilename;
+  const requestedTimeZone = getSelectedTimeZone();
 
   fetchCSVData(csvFilename)
     .then(data => {
+      if (
+        csvFilename !== currentCsvFilename ||
+        requestedTimeZone !== getSelectedTimeZone()
+      ) {
+        return;
+      }
+
       renderDashboard(
         data,
         csvFilename
@@ -355,14 +612,8 @@ function renderDashboard(
   renderTop10Chart(top10);
 
   // Seven-day running average
-  const { end } =
-    getTimeWindowUTC();
-
-  const dates =
-    getDateRange(
-      end,
-      DASHBOARD_CONFIG.analysisWindowDays
-    );
+  const { dateKeys: dates } =
+    getAnalysisTimeWindow();
 
   const dailyCounts =
     getDailyUserCounts(filtered, top10);
@@ -464,12 +715,65 @@ subredditSelect.addEventListener(
   }
 );
 
+analysisTimeZoneSelect.addEventListener(
+  "change",
+  event => {
+    selectedTimeZone = event.target.value;
+    topThreeRankingsPromise = null;
+
+    const url = new URL(window.location.href);
+
+    if (selectedTimeZone === "UTC") {
+      url.searchParams.delete("timezone");
+    } else {
+      url.searchParams.set(
+        "timezone",
+        selectedTimeZone
+      );
+    }
+
+    window.history.replaceState(
+      null,
+      "",
+      url
+    );
+
+    if (
+      event.isTrusted &&
+      typeof window.umami !== "undefined"
+    ) {
+      window.umami.track(
+        "Analysis Timezone Selection",
+        { timezone: selectedTimeZone }
+      );
+    }
+
+    if (currentCsvFilename) {
+      loadDashboard(currentCsvFilename);
+    }
+  }
+);
+
 initializeTrackingSharing();
 
 // Restore a shared subreddit, or select a random one for an ordinary visit.
-const requestedSubreddit = new URL(window.location.href)
-  .searchParams
-  .get("subreddit");
+const requestedUrl = new URL(window.location.href);
+const requestedSubreddit = requestedUrl.searchParams.get(
+  "subreddit"
+);
+const requestedTimeZone = requestedUrl.searchParams.get(
+  "timezone"
+);
+
+if (
+  requestedTimeZone &&
+  Array.from(analysisTimeZoneSelect.options).some(
+    option => option.value === requestedTimeZone
+  )
+) {
+  analysisTimeZoneSelect.value = requestedTimeZone;
+  selectedTimeZone = requestedTimeZone;
+}
 const requestedSubredditButton = requestedSubreddit
   ? subredditButtons.find(button => {
       const buttonSubreddit = button.dataset.filename
@@ -492,7 +796,7 @@ initialSubredditButton.click();
   
   /* Pie Chart Card */
 function getFilteredData(data) {
-  const { start, end } = getTimeWindowUTC();
+  const { start, end } = getAnalysisTimeWindow();
 
   return data.filter(row => {
     if (!row.PostTimeUTC) return false;
@@ -651,9 +955,9 @@ function getDailyUserCounts(filteredData, top10Users) {
     const user = row.Username;
     if (!topSet.has(user)) return;
 
-    const date = new Date(row.PostTimeUTC)
-      .toISOString()
-      .split("T")[0];
+    const date = formatDateKeyInTimeZone(
+      new Date(row.PostTimeUTC)
+    );
 
     if (!counts[date]) counts[date] = {};
     if (!counts[date][user]) counts[date][user] = 0;
@@ -662,23 +966,6 @@ function getDailyUserCounts(filteredData, top10Users) {
   });
 
   return counts;
-}
-
-function getDateRange(end, numberOfDays) {
-  const dates = [];
-  const current = new Date(end);
-
-  current.setUTCHours(0, 0, 0, 0);
-  current.setUTCDate(
-    current.getUTCDate() - numberOfDays + 1
-  );
-
-  for (let day = 0; day < numberOfDays; day++) {
-    dates.push(current.toISOString().split("T")[0]);
-    current.setUTCDate(current.getUTCDate() + 1);
-  }
-
-  return dates;
 }
 
 function getEndAnchoredWeeklyTicks(dates) {
@@ -766,6 +1053,8 @@ function renderRunningAvgChart(dates, series, top10Users) {
   const layout = {
     margin: { t: 20, b: 40, l: 60, r: 20 },
 
+    shapes: buildWeekendBackgroundShapes(dates),
+
     xaxis: {
       title: "Date",
       type: "date",
@@ -776,7 +1065,8 @@ function renderRunningAvgChart(dates, series, top10Users) {
     },
 
     yaxis: {
-      title: "7-day avg"
+      title: "7-day avg",
+      rangemode: "tozero"
     },
 
     autosize: true
@@ -944,7 +1234,7 @@ function createEmptyDailyCounts() {
 }
 
 function buildDailyCounts(data, top3Users) {
-  const { start, end } = getTimeWindowUTC();
+  const { start, end } = getAnalysisTimeWindow();
 
   const daily = {};
 
@@ -964,9 +1254,7 @@ function buildDailyCounts(data, top3Users) {
       return;
     }
 
-    const date = postDate
-      .toISOString()
-      .split("T")[0];
+    const date = formatDateKeyInTimeZone(postDate);
 
     if (!daily[date]) {
       daily[date] =
@@ -988,29 +1276,16 @@ function buildDailyCounts(data, top3Users) {
 }
 
 function fillMissingDates(daily) {
-  const { start, end } = getTimeWindowUTC();
-  const dates = [];
+  const { dateKeys } = getAnalysisTimeWindow();
 
-  let current = new Date(start);
-
-  while (current <= end) {
-    const date = current
-      .toISOString()
-      .split("T")[0];
-
+  dateKeys.forEach(date => {
     if (!daily[date]) {
       daily[date] =
         createEmptyDailyCounts();
     }
+  });
 
-    dates.push(date);
-
-    current.setUTCDate(
-      current.getUTCDate() + 1
-    );
-  }
-
-  return dates.sort();
+  return dateKeys;
 }
 
 function renderStackedChart(
@@ -1084,6 +1359,8 @@ function renderStackedChart(
 
   const layout = {
     barmode: "stack",
+
+    shapes: buildWeekendBackgroundShapes(dates),
 
     margin: {
       t: 20,
@@ -1240,7 +1517,25 @@ function renderStackedPercentChart(
   ];
 
   const referencePercentages = [25, 50, 75];
-  const shapes = [];
+  const shapes = buildWeekendBackgroundShapes(dates);
+  const chartElement = document.getElementById(
+    "stacked-percent-chart"
+  );
+  const layoutMargin = {
+    t: 20,
+    b: 60,
+    l: 60,
+    r: 20
+  };
+  const chartHeight = chartElement.clientHeight || 450;
+  const plotHeight = Math.max(
+    100,
+    chartHeight - layoutMargin.t - layoutMargin.b
+  );
+  const weekendExtensionPixels = 20;
+  const percentAxisMaximum =
+    100 * plotHeight /
+    (plotHeight - weekendExtensionPixels);
 
   referencePercentages.forEach(y => {
     shapes.push({
@@ -1280,12 +1575,7 @@ function renderStackedPercentChart(
   const layout = {
     barmode: "stack",
 
-    margin: {
-      t: 20,
-      b: 60,
-      l: 60,
-      r: 20
-    },
+    margin: layoutMargin,
 
     xaxis: {
       title: "Date",
@@ -1298,7 +1588,7 @@ function renderStackedPercentChart(
 
     yaxis: {
       title: "Percent",
-      range: [0, 100]
+      range: [0, percentAxisMaximum]
     },
 
     hovermode: "x unified",
@@ -1308,7 +1598,7 @@ function renderStackedPercentChart(
   };
 
   Plotly.newPlot(
-    "stacked-percent-chart",
+    chartElement,
     traces,
     layout,
     {

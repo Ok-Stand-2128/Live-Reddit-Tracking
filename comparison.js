@@ -495,6 +495,81 @@ function formatUTCDateKey(date) {
   return date.toISOString().slice(0, 10);
 }
 
+const WEEKEND_HIGHLIGHT_COLOR = "rgba(247, 170, 70, 0.25)";
+const WEEKEND_DIVIDER_COLOR = "rgb(250, 250, 250)";
+
+function buildWeekendBackgroundShapes(dateKeys) {
+  if (!Array.isArray(dateKeys) || dateKeys.length === 0) {
+    return [];
+  }
+
+  const firstDate = new Date(`${dateKeys[0]}T00:00:00Z`);
+  const lastDate = new Date(
+    `${dateKeys[dateKeys.length - 1]}T00:00:00Z`
+  );
+  const firstSaturday = new Date(firstDate);
+  const daysUntilSaturday =
+    (6 - firstSaturday.getUTCDay() + 7) % 7;
+  const dataEndExclusive = new Date(
+    lastDate.getTime() + 24 * 60 * 60 * 1000
+  );
+
+  firstSaturday.setUTCDate(
+    firstSaturday.getUTCDate() + daysUntilSaturday
+  );
+
+  const shapes = [];
+
+  for (
+    let saturday = firstSaturday;
+    saturday < dataEndExclusive;
+    saturday = new Date(
+      saturday.getTime() + 7 * 24 * 60 * 60 * 1000
+    )
+  ) {
+    const monday = new Date(
+      saturday.getTime() + 2 * 24 * 60 * 60 * 1000
+    );
+    const sunday = new Date(
+      saturday.getTime() + 24 * 60 * 60 * 1000
+    );
+
+    if (monday > dataEndExclusive) {
+      break;
+    }
+
+    shapes.push({
+      type: "rect",
+      xref: "x",
+      yref: "paper",
+      x0: saturday.toISOString(),
+      x1: monday.toISOString(),
+      y0: 0,
+      y1: 1,
+      fillcolor: WEEKEND_HIGHLIGHT_COLOR,
+      line: { width: 0 },
+      layer: "below"
+    });
+
+    shapes.push({
+      type: "line",
+      xref: "x",
+      yref: "paper",
+      x0: sunday.toISOString(),
+      x1: sunday.toISOString(),
+      y0: 0,
+      y1: 1,
+      line: {
+        color: WEEKEND_DIVIDER_COLOR,
+        width: 1
+      },
+      layer: "below"
+    });
+  }
+
+  return shapes;
+}
+
 function formatDateRangeLabel(dateKey) {
   return new Intl.DateTimeFormat(
     "en-US",
@@ -1080,7 +1155,12 @@ function renderDailyPostsComparison(results) {
       },
       hovermode: "closest",
       showlegend: false,
-      shapes: provisionalShapes,
+      shapes: [
+        ...buildWeekendBackgroundShapes(
+          visibleDateKeys
+        ),
+        ...provisionalShapes
+      ],
       annotations: provisionalAnnotations,
       xaxis: {
         title: "Date",
